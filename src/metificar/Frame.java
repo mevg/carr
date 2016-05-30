@@ -5,6 +5,7 @@ import java.sql.*;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 public class Frame extends javax.swing.JFrame {
 
@@ -117,6 +118,11 @@ public class Frame extends javax.swing.JFrame {
         jScrollPane1.setViewportView(table);
 
         btnChecar.setText("Checar");
+        btnChecar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChecarActionPerformed(evt);
+            }
+        });
 
         btnQuitar.setText("Quitar");
         btnQuitar.addActionListener(new java.awt.event.ActionListener() {
@@ -226,7 +232,23 @@ public class Frame extends javax.swing.JFrame {
         dtm.removeRow(fila);
         total -= (descontar * cantidad);
         lblTotal.setText("" + total);
+        /*int opcion = JOptionPane.showOptionDialog( null,"Seleccione una opcion",
+              "Selector de opciones",JOptionPane.YES_NO_CANCEL_OPTION,
+              JOptionPane.QUESTION_MESSAGE,null,// null para icono por defecto.
+              new Object[] { "Menos", "Todo", "Cancelar" },"opcion 1");
+        
+        if(opcion == 0 ){
+            
+        }else if(opcion == 1){
+            
+        }else{
+            
+        }*/
     }//GEN-LAST:event_btnQuitarActionPerformed
+
+    private void btnChecarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChecarActionPerformed
+        
+    }//GEN-LAST:event_btnChecarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnChecar;
@@ -239,6 +261,6 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblTotal;
     private javax.swing.JTable table;
-    private javax.swing.JTextField txtCodigoFoco;
+    public static javax.swing.JTextField txtCodigoFoco;
     // End of variables declaration//GEN-END:variables
 }
