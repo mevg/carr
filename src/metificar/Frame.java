@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class Frame extends javax.swing.JFrame {
 
     Conexion conexion;
-    public static int codigo;
+    public static int codigo = 0;
        
     
     public Frame() {
@@ -20,32 +20,33 @@ public class Frame extends javax.swing.JFrame {
         Thread t = new Thread(new Escanear());
         t.start();
         
+       // llenarTabla(codigo);
+        
     }
     
-    public void llenarTabla(int codigo){
-        
-        try {
-            conexion = new Conexion();
-            Connection con = conexion.getConnection();
-            PreparedStatement stm = con.prepareStatement("Select * from articulos where codico_de_barras = ?");
-            stm.setInt(1, codigo);
-            ResultSet rs = stm.executeQuery();
-            //String[] row;
-            ResultSetMetaData metaData = rs.getMetaData();
-           while(rs.next()){
-             String[] row = {rs.getString("codigo_de_barras"),rs.getString("descripcion"), rs.getString("precio_unitario"),rs.getString("peso")};
-             DefaultTableModel dtm = (DefaultTableModel) table.getModel();
-             dtm.addRow(row);
-           }
-        } catch (SQLException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+    /*public void llenarTabla(int codigo){
+        if(codigo != 0){
+            try {
+                conexion = new Conexion();
+                Connection con = conexion.getConnection();
+                Statement stm = con.createStatement();
+                ResultSet rs = stm.executeQuery("Select * from articulos where codico_de_barras = " + codigo);
+                ResultSetMetaData metaData = rs.getMetaData();
+                if(rs.next()){
+                    String[] row = {rs.getString("codigo_de_barras"),rs.getString("descripcion"), rs.getString("precio_unitario"),rs.getString("peso")};
+                    DefaultTableModel dtm = (DefaultTableModel) table.getModel();
+                    dtm.addRow(row);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-        
-    }
+    }*/
     
     class Escanear implements Runnable{
         int codigo;
         String codigo_text;
+        Conexion conexion;
 
         @Override
         public void run() {
@@ -55,6 +56,10 @@ public class Frame extends javax.swing.JFrame {
                     if(!codigo_text.isEmpty()){
                         codigo = Integer.parseInt(codigo_text);
                         Frame.codigo = codigo;
+                        llenarTabla(codigo);
+                        Frame.txtCodigoFoco.setText("");
+                        codigo = 0;
+                        
                         System.out.println("codigo: "+ codigo);
                     }else{
                         System.out.println("Campo vacio"); 
@@ -65,6 +70,25 @@ public class Frame extends javax.swing.JFrame {
                 }      
             }
         }
+        
+        public void llenarTabla(int codigo){
+        if(codigo != 0){
+            try {
+                conexion = new Conexion();
+                Connection con = conexion.getConnection();
+                Statement stm = con.createStatement();
+                ResultSet rs = stm.executeQuery("Select * from articulos where codigo_de_barras = " + codigo);
+                ResultSetMetaData metaData = rs.getMetaData();
+                if(rs.next()){
+                    String[] row = {rs.getString("codigo_de_barras"),rs.getString("descripcion"), rs.getString("precio_unitario"),rs.getString("peso")};
+                    DefaultTableModel dtm = (DefaultTableModel) table.getModel();
+                    dtm.addRow(row);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
     }
 
     @SuppressWarnings("unchecked")
