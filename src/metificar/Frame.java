@@ -2,8 +2,10 @@ package metificar;
 
 import javax.swing.table.DefaultTableModel;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 public class Frame extends javax.swing.JFrame {
 
     Conexion conexion;
@@ -20,33 +22,15 @@ public class Frame extends javax.swing.JFrame {
         Thread t = new Thread(new Escanear());
         t.start();
         
-       // llenarTabla(codigo);
-        
     }
     
-    /*public void llenarTabla(int codigo){
-        if(codigo != 0){
-            try {
-                conexion = new Conexion();
-                Connection con = conexion.getConnection();
-                Statement stm = con.createStatement();
-                ResultSet rs = stm.executeQuery("Select * from articulos where codico_de_barras = " + codigo);
-                ResultSetMetaData metaData = rs.getMetaData();
-                if(rs.next()){
-                    String[] row = {rs.getString("codigo_de_barras"),rs.getString("descripcion"), rs.getString("precio_unitario"),rs.getString("peso")};
-                    DefaultTableModel dtm = (DefaultTableModel) table.getModel();
-                    dtm.addRow(row);
-                }
-            } catch (SQLException ex) {
-                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }*/
-    
     class Escanear implements Runnable{
-        int codigo;
+        long codigo;
         String codigo_text;
         Conexion conexion;
+        long codigo_anterior;
+        boolean bandera = false;
+        ArrayList<Articulo> articulos = new ArrayList<Articulo>();
 
         @Override
         public void run() {
@@ -54,41 +38,63 @@ public class Frame extends javax.swing.JFrame {
                 try {
                     codigo_text = Frame.txtCodigoFoco.getText();
                     if(!codigo_text.isEmpty()){
-                        codigo = Integer.parseInt(codigo_text);
-                        Frame.codigo = codigo;
+                        codigo = Long.parseLong(codigo_text);
+                        //if(codigo_anterior == codigo) bandera = true ;
                         llenarTabla(codigo);
+                        codigo_anterior = codigo;
                         Frame.txtCodigoFoco.setText("");
-                        codigo = 0;
-                        
-                        System.out.println("codigo: "+ codigo);
-                    }else{
-                        System.out.println("Campo vacio"); 
+                        //codigo = 0;
                     }
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
                 }      
             }
         }
         
-        public void llenarTabla(int codigo){
-        if(codigo != 0){
-            try {
-                conexion = new Conexion();
-                Connection con = conexion.getConnection();
-                Statement stm = con.createStatement();
-                ResultSet rs = stm.executeQuery("Select * from articulos where codigo_de_barras = " + codigo);
-                ResultSetMetaData metaData = rs.getMetaData();
-                if(rs.next()){
-                    String[] row = {rs.getString("codigo_de_barras"),rs.getString("descripcion"), rs.getString("precio_unitario"),rs.getString("peso")};
-                    DefaultTableModel dtm = (DefaultTableModel) table.getModel();
-                    dtm.addRow(row);
+        public void llenarTabla(long codigo){
+            if(codigo_anterior == codigo){
+                System.out.println("codigos iguales modificar cantidad");
+                for(int i = 0; i < table.getRowCount(); i++){
+                    modificarCantidad(articulos.get(i), i);
                 }
-            } catch (SQLException ex) {
-                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            }else{
+                System.out.println("Codigos Diferenctes agregar a tabla");
+                try {
+                    conexion = new Conexion();
+                    Connection con = conexion.getConnection();
+                    Statement stm = con.createStatement();
+                    ResultSet rs = stm.executeQuery("Select * from articulos where codigo_de_barras = " + codigo);
+                    if(rs.next()){
+                        Articulo art = new Articulo();
+                        art.setDescripcion(rs.getString("descripcion"));
+                        art.setCodigoDeBarras(Long.parseLong(rs.getString("codigo_de_barras")));
+                        art.setPrecioUnitario(Double.parseDouble(rs.getString("precio_unitario")));
+                        art.setPeso(Double.parseDouble(rs.getString("peso")));
+                        art.setCantidad(1);
+                        articulos.add(art);
+                        DefaultTableModel dtm = (DefaultTableModel) table.getModel();
+                        dtm.addRow(new String[]{art.getCodigoDeBarras()+"",
+                            art.getDescripcion(),
+                            art.getPrecioUnitario()+"",
+                            art.getPeso()+"",
+                            art.getCantidad()+"",
+                        });
+                    }
+                    conexion.closeConnection();
+                } catch (SQLException ex) {
+                    Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         }
-    }
+        
+        public void modificarCantidad(Articulo a, int row){
+            if(a.getCodigoDeBarras() == codigo_anterior){
+                a.setCantidad(a.getCantidad()+1);
+                table.setValueAt(a.getCantidad(), row, 4);
+                
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -102,19 +108,16 @@ public class Frame extends javax.swing.JFrame {
         btnChecar = new javax.swing.JButton();
         btnQuitar = new javax.swing.JButton();
         btnFinalizar = new javax.swing.JButton();
+        txtCodigoFoco = new javax.swing.JTextField();
         jPanel3 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         lblTotal = new javax.swing.JLabel();
-        txtCodigoFoco = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         table.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+
             },
             new String [] {
                 "Title 1", "Title 2", "Title 3", "Title 4"
@@ -123,8 +126,18 @@ public class Frame extends javax.swing.JFrame {
         jScrollPane1.setViewportView(table);
 
         btnChecar.setText("Checar");
+        btnChecar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChecarActionPerformed(evt);
+            }
+        });
 
         btnQuitar.setText("Quitar");
+        btnQuitar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnQuitarActionPerformed(evt);
+            }
+        });
 
         btnFinalizar.setText("Finalizar \nCompra");
 
@@ -140,17 +153,13 @@ public class Frame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnFinalizar)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 223, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnChecar)
                     .addComponent(btnQuitar)
@@ -185,41 +194,38 @@ public class Frame extends javax.swing.JFrame {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addGap(33, 33, 33)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(24, 24, 24)
-                        .addComponent(txtCodigoFoco, javax.swing.GroupLayout.PREFERRED_SIZE, 136, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(txtCodigoFoco, javax.swing.GroupLayout.PREFERRED_SIZE, 136, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(20, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(txtCodigoFoco, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(20, 20, 20))
+                .addComponent(txtCodigoFoco, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -227,6 +233,16 @@ public class Frame extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
+        int row = table.getSelectedRow();
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.removeRow(row);
+    }//GEN-LAST:event_btnQuitarActionPerformed
+
+    private void btnChecarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChecarActionPerformed
+ 
+    }//GEN-LAST:event_btnChecarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnChecar;
