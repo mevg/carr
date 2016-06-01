@@ -118,11 +118,6 @@ public class Frame extends javax.swing.JFrame {
         jScrollPane1.setViewportView(table);
 
         btnChecar.setText("Checar");
-        btnChecar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnChecarActionPerformed(evt);
-            }
-        });
 
         btnQuitar.setText("Quitar");
         btnQuitar.addActionListener(new java.awt.event.ActionListener() {
@@ -226,29 +221,30 @@ public class Frame extends javax.swing.JFrame {
     private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnQuitarActionPerformed
         int fila = table.getSelectedRow();
         DefaultTableModel dtm = (DefaultTableModel) table.getModel(); //TableProducto es el nombre de mi tabla ;) 
-        double descontar = Double.parseDouble(dtm.getValueAt(fila, 2).toString());
-        int cantidad = Integer.parseInt(dtm.getValueAt(fila, 4).toString());
-        lista.remove(fila);
-        dtm.removeRow(fila);
-        total -= (descontar * cantidad);
-        lblTotal.setText("" + total);
-        /*int opcion = JOptionPane.showOptionDialog( null,"Seleccione una opcion",
-              "Selector de opciones",JOptionPane.YES_NO_CANCEL_OPTION,
-              JOptionPane.QUESTION_MESSAGE,null,// null para icono por defecto.
-              new Object[] { "Menos", "Todo", "Cancelar" },"opcion 1");
-        
-        if(opcion == 0 ){
-            
-        }else if(opcion == 1){
-            
-        }else{
-            
-        }*/
+        double descontar = Double.parseDouble(lista.get(fila).getPrecio());
+        int cantidad = lista.get(fila).getCantidad();
+        if (cantidad > 1) {
+            int remover = Integer.parseInt(JOptionPane.showInputDialog("Cuantos desea quitar?"));
+            if (remover > cantidad) {
+                JOptionPane.showMessageDialog(null, "Introduce un numero valido");
+            } else if ((cantidad - remover) == 0) {
+                lista.remove(fila);
+                dtm.removeRow(fila);
+                total -= (descontar * remover);
+                lblTotal.setText("" + total);
+            } else {
+                lista.get(fila).setCantidad(cantidad - remover);
+                dtm.setValueAt(lista.get(fila).getCantidad(), fila, 4);
+                total -= (descontar * remover);
+                lblTotal.setText("" + total);
+            }
+        } else {
+            lista.remove(fila);
+            dtm.removeRow(fila);
+            total -= (descontar * cantidad);
+            lblTotal.setText("" + total);
+        }
     }//GEN-LAST:event_btnQuitarActionPerformed
-
-    private void btnChecarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChecarActionPerformed
-        
-    }//GEN-LAST:event_btnChecarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnChecar;
@@ -261,6 +257,6 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel lblTotal;
     private javax.swing.JTable table;
-    public static javax.swing.JTextField txtCodigoFoco;
+    private javax.swing.JTextField txtCodigoFoco;
     // End of variables declaration//GEN-END:variables
 }
